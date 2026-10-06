@@ -1,5 +1,15 @@
+import pg from 'pg'
 import env from '#start/env'
 import { defineConfig } from '@adonisjs/lucid'
+
+/**
+ * Una columna `date` es un día del calendario, no un instante. Por defecto `pg`
+ * la convierte en un `Date` de JS (medianoche en el huso del proceso), y eso
+ * rompe la comparación de texto de `Task.isOverdueOn`: `Date < string` da
+ * siempre `false`. Se devuelve tal cual la manda PostgreSQL, `AAAA-MM-DD`, que
+ * es lo que declara `database/schema_rules.ts` y lo que hacía SQLite.
+ */
+pg.types.setTypeParser(pg.types.builtins.DATE, (value) => value)
 
 const dbConfig = defineConfig({
   /**

@@ -44,7 +44,9 @@ export default class Task extends TaskSchema {
    *
    * Se compara texto contra texto porque dos fechas ISO comparadas así **son**
    * la comparación de días del calendario: no hay hora, ni huso, ni instante
-   * intermedio donde se cuele un día de más.
+   * intermedio donde se cuele un día de más. Que `dueDate` llegue como texto
+   * al releerla de PostgreSQL no es lo que hace el driver por defecto: lo fija
+   * el `setTypeParser` del tipo `date` en `config/database.ts`.
    *
    * Esta es la única definición de «vencida» del sistema. No se reimplementa en
    * ninguna otra capa, y en particular el frontend nunca compara fechas.
