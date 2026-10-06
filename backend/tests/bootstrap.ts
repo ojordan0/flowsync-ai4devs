@@ -41,7 +41,13 @@ export const plugins: Config['plugins'] = [
  * The teardown functions are executed after all the tests
  */
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [],
+  /**
+   * La suite corre contra `db-test` (`.env.test`), una base en memoria que
+   * nace vacía. Se migra al empezar y se deshace entera al terminar, así que
+   * la batería no depende de que nadie la haya migrado antes ni le deja nada a
+   * la siguiente. Cada test, además, va en su transacción global.
+   */
+  setup: [() => testUtils.db().migrate()],
   teardown: [],
 }
 

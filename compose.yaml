@@ -1,0 +1,57 @@
+# FlowSync — bases de datos locales. Se manejan con los atajos del Makefile
+# (`make db-up`, `make db-down`, `make migrate`, `make test`).
+#
+# Dos servicios con la misma imagen y papeles opuestos:
+#
+#   - db       desarrollo, en el 54410. Sus datos viven en un volumen con nombre
+#              y sobreviven a un `docker compose down`.
+#   - db-test  pruebas, en el 54411. Sin volumen: el directorio de datos es un
+#              tmpfs, así que cada arranque del contenedor parte de una base
+#              vacía y ninguna batería hereda lo que dejó la anterior.
+#
+# Puertos fuera del 5432 a propósito: quien tenga un PostgreSQL propio
+# levantado lo tendría ocupado, y el error no mencionaría a Docker.
+#
+# Las credenciales son locales y de mentira; las mismas van en backend/.env.example
+# (desarrollo) y backend/.env.test (pruebas).
+
+x-healthcheck: &healthcheck
+  # Por TCP (`-h 127.0.0.1`) y no por el socket: la primera vez, la imagen crea
+  # la base con un servidor temporal que solo escucha en el socket Unix, y un
+  # `pg_isready` por socket lo daría por sano antes de que acepte conexiones de
+  # verdad desde fuera del contenedor.
+  test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+  interval: 2s
+  timeout: 5s
+  retries: 30
+  start_period: 10s
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: flowsync
+      POSTGRES_PASSWORD: flowsync
+      POSTGRES_DB: flowsync_dev
+    ports:
+      - '54410:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck: *healthcheck
+
+  db-test:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: flowsync
+      POSTGRES_PASSWORD: flowsync
+      POSTGRES_DB: flowsync_test
+    ports:
+      - '54411:5432'
+    # En memoria: ni volumen con nombre ni bind mount. Se pierde al parar el
+    # contenedor, que es justo lo que se quiere.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck: *healthcheck
+
+volumes:
+  db-data:
