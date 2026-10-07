@@ -21,6 +21,7 @@ PostgreSQL en Docker con la imagen `pgvector/pgvector:pg17`. Dos servicios en `c
 make db-up      # docker compose up -d --wait db db-test
 make db-down    # para las dos; conserva el volumen de desarrollo
 make migrate    # migra las dos (la de pruebas con NODE_ENV=test y sin regenerar schema.ts)
+make seed       # migrate + equipo de demostración en la de desarrollo (solo NODE_ENV=development, idempotente)
 make test       # db-up + npm test
 ```
 

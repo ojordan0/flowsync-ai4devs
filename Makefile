@@ -14,7 +14,7 @@ BACKEND  := backend
 FRONTEND := frontend
 
 .DEFAULT_GOAL := help
-.PHONY: help setup start install env migrate test db-up db-down clean
+.PHONY: help setup start install env migrate seed test db-up db-down clean
 
 # La ayuda se genera a partir de los comentarios `## ...` de cada target, para
 # que no haya un segundo listado que mantener a mano y que pueda divergir.
@@ -89,6 +89,15 @@ migrate: db-up ## Migra las dos bases, desarrollo y pruebas
 	@cd $(BACKEND) && node ace migration:run
 	@echo "🗃️  Migrando la base de pruebas..."
 	@cd $(BACKEND) && NODE_ENV=test node ace migration:run --no-schema-generate
+
+# Carga el equipo de demostración en la base de desarrollo: 5 personas y unas
+# 40 tareas, con fechas repartidas en los últimos 90 días contados desde hoy.
+# Sin forzar NODE_ENV: lo pone el .env, y el seeder declara
+# `environment = ['development']`, así que en cualquier otro entorno Lucid lo
+# ignora en vez de sembrar. Lanzarlo dos veces no duplica nada.
+seed: migrate ## Carga los datos de desarrollo (equipo de demostración)
+	@echo "🌱 Sembrando la base de desarrollo..."
+	@cd $(BACKEND) && node ace db:seed
 
 # La suite se migra sola contra `db-test` (tests/bootstrap.ts); solo hace
 # falta que la base esté arriba.

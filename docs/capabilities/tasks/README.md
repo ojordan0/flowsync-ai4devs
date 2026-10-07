@@ -114,7 +114,21 @@ npm install
 cp .env.example .env && node ace generate:key   # solo la primera vez
 make db-up                                      # desde la raíz: PostgreSQL en Docker (54410 y 54411)
 node ace migration:run                          # migra la base de desarrollo y regenera database/schema.ts
+make seed                                       # desde la raíz: el equipo de demostración, opcional
 ```
+
+`make seed` llena la base de desarrollo con un equipo inventado: 5 personas y 40 tareas en los tres
+estados, con fechas de creación repartidas en los últimos 90 días **contados desde el día en que se
+lanza**. Las personas son Lucía Arrieta, Tomás Villanueva, Nerea Calvo, Iván Sopeña y Marta Quiroga;
+su correo es `nombre.apellido` sin tildes en el dominio `flowsync.example`, y todas entran con la
+contraseña `flowsync-demo`. Solo corre con `NODE_ENV=development`, y lanzarlo otra vez no duplica
+nada: si el equipo ya está, no hace nada. Para regenerarlo con las fechas al día, `node ace
+migration:fresh --seed`, que vacía la base entera.
+
+Las reglas que cumplen los datos, y de qué requisito sale cada una, están comentadas en las
+factories: [`user_factory.ts`](../../../backend/database/factories/user_factory.ts) y
+[`task_factory.ts`](../../../backend/database/factories/task_factory.ts). El seeder es
+[`equipo_de_demostracion_seeder.ts`](../../../backend/database/seeders/equipo_de_demostracion_seeder.ts).
 
 ### Tests automáticos
 
