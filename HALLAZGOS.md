@@ -25,7 +25,7 @@ De los 6 unit tests, 2 fallaron:
 
 Cuál de tus casos nuevos PASÓ, si alguno pasó, y por qué crees que pasó. Es la pregunta más interesante del ejercicio, y la respuesta no está en ningún sitio: se deduce mirando qué tienen en común los que fallaron.
 
-Los 4 casos nuevos que pasaron fueron:
+Los 8 casos nuevos que pasaron fueron:
 Test Funcionales:
 - Vencer hoy todavía no es estar vencida
 - Fecha futura
