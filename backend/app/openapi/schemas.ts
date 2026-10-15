@@ -1,5 +1,6 @@
 import { ApiProperty } from '@foadonis/openapi/decorators'
 import { TASK_STATUSES } from '#models/task'
+import { COMMENT_BODY_MAX_LENGTH } from '#models/comment'
 
 /**
  * Esquemas reutilizables del documento OpenAPI.
@@ -149,6 +150,31 @@ export class TrashedTask {
 }
 
 /**
+ * Un comentario del hilo de una tarea (`CommentTransformer`). El autor viaja con la
+ * misma forma que el responsable de una tarea: identificador, nombre e iniciales, nunca
+ * el email.
+ */
+export class Comment {
+  @ApiProperty({ type: 'number', example: 1 })
+  id!: number
+
+  @ApiProperty({
+    type: 'string',
+    minLength: 1,
+    maxLength: COMMENT_BODY_MAX_LENGTH,
+    example: 'Falta el informe del trimestre',
+    description: 'Ya recortado: sin espacios en los extremos.',
+  })
+  body!: string
+
+  @ApiProperty({ type: () => TaskAssignee })
+  author!: TaskAssignee
+
+  @ApiProperty({ type: 'string', format: 'date-time' })
+  createdAt!: string
+}
+
+/**
  * El envoltorio `{ "data": ... }` que `providers/api_provider.ts` pone a toda
  * respuesta. Se documenta como parte de la forma porque el cliente lo tiene que
  * desenvolver.
@@ -178,6 +204,11 @@ export class TrashedTaskListResponse {
   data!: TrashedTask[]
 }
 
+export class CommentResponse {
+  @ApiProperty({ type: () => Comment })
+  data!: Comment
+}
+
 /**
  * Cuerpo de la creación. El título es el único dato que se acepta: el estado y
  * el responsable los pone el sistema y se ignoran aunque vengan en la petición.
@@ -192,6 +223,22 @@ export class CreateTaskBody {
       'Se recortan los espacios de los extremos antes de comprobar la longitud: un título de solo espacios se rechaza igual que uno vacío, y pasarse de 200 es un error, nunca un recorte.',
   })
   title!: string
+}
+
+/**
+ * Cuerpo de un comentario. El texto es el único dato que se acepta: el autor es la
+ * cuenta dueña del token, y un `author` o un `authorId` en el cuerpo se ignoran.
+ */
+export class CreateCommentBody {
+  @ApiProperty({
+    type: 'string',
+    minLength: 1,
+    maxLength: COMMENT_BODY_MAX_LENGTH,
+    example: 'Falta el informe del trimestre',
+    description:
+      'Se recortan los espacios de los extremos antes de comprobar la longitud: un texto de solo espacios se rechaza igual que uno vacío, y pasarse de 500 es un error, nunca un recorte. Tampoco se admite el mismo texto, ya recortado, que el último comentario de la misma cuenta en la misma tarea.',
+  })
+  body!: string
 }
 
 export class UpdateTaskStatusBody {

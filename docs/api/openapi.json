@@ -364,6 +364,61 @@
           "dueDate",
           "today"
         ]
+      },
+      "CreateCommentBody": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "Falta el informe del trimestre",
+            "description": "Se recortan los espacios de los extremos antes de comprobar la longitud: un texto de solo espacios se rechaza igual que uno vacío, y pasarse de 500 es un error, nunca un recorte. Tampoco se admite el mismo texto, ya recortado, que el último comentario de la misma cuenta en la misma tarea."
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "CommentResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Comment"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "Falta el informe del trimestre",
+            "description": "Ya recortado: sin espacios en los extremos."
+          },
+          "author": {
+            "$ref": "#/components/schemas/TaskAssignee"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "author",
+          "createdAt"
+        ]
       }
     }
   },
@@ -937,6 +992,81 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SetTaskDueDateBody"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tasks/{id}/comments": {
+      "post": {
+        "summary": "Comentar una tarea",
+        "description": "Crea un comentario sobre una tarea viva a nombre de la cuenta dueña del token: un `author` o un `authorId` enviados en el cuerpo se ignoran, no se rechazan. La tarea no cambia: ni su título, ni su estado, ni su responsable. Una tarea en la papelera no se puede comentar. El texto se recorta y no puede repetir, ya recortado, el último comentario de la misma cuenta en la misma tarea; otra cuenta sí puede escribir lo mismo.",
+        "tags": [
+          "TaskComments"
+        ],
+        "responses": {
+          "201": {
+            "description": "El comentario ya creado, con el texto recortado y a nombre de quien lo envió.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o no es válido. No se crea ningún comentario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe ninguna tarea viva con ese identificador. Se comprueba antes que el cuerpo. No se crea ningún comentario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sobre el campo `body`: falta, está vacío, es solo espacios o pasa de 500 caracteres (no se guarda una versión recortada), o repite el último comentario de la misma cuenta en esa tarea (regla `notRepeated`). No se crea ningún comentario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentBody"
               }
             }
           }
