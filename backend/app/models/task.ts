@@ -1,4 +1,5 @@
 import User from '#models/user'
+import { DateTime } from 'luxon'
 import { beforeFetch, beforeFind, belongsTo } from '@adonisjs/lucid/orm'
 import { TaskSchema } from '#database/schema'
 import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
@@ -64,16 +65,33 @@ export default class Task extends TaskSchema {
    * correctas, y que una tarea pase a vencida sola al cambiar el día sin que
    * nadie la haya tocado: no hay nada congelado, se decide al mirar.
    *
-   * Se compara texto contra texto porque dos fechas ISO comparadas así **son**
-   * la comparación de días del calendario: no hay hora, ni huso, ni instante
-   * intermedio donde se cuele un día de más.
+   * `dueDate` no llega siempre igual, aunque el tipo diga `string`. Recién
+   * asignada (al fijarla por la API) es el texto `AAAA-MM-DD`; leída de la base,
+   * el driver de PostgreSQL entrega la columna `date` como un `Date` a medianoche
+   * local. Antes de comparar, `dueDay` reduce cualquiera de las dos a texto
+   * `AAAA-MM-DD`, y lo que se compara es ese texto con `referenceDay`: dos días
+   * ISO comparados como texto son la comparación de días del calendario.
    *
    * Esta es la única definición de «vencida» del sistema. No se reimplementa en
    * ninguna otra capa, y en particular el frontend nunca compara fechas.
    */
   isOverdueOn(referenceDay: string): boolean {
+    if (this.status === 'done') return false
     if (this.dueDate === null) return false
 
-    return this.dueDate < referenceDay
+    return dueDay(this.dueDate) < referenceDay
   }
+}
+
+/**
+ * El día del calendario de una fecha de vencimiento, como texto `AAAA-MM-DD`.
+ *
+ * Un `Date` se lee en hora local, no en UTC, porque así lo construye el driver
+ * (`new Date(año, mes, día)`): leerlo en UTC lo movería al día anterior en
+ * cualquier huso al este de Greenwich. El texto se devuelve tal cual.
+ */
+function dueDay(value: string | Date): string {
+  if (typeof value === 'string') return value
+
+  return DateTime.fromJSDate(value).toFormat('yyyy-MM-dd')
 }
